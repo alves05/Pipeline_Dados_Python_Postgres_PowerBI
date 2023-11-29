@@ -575,7 +575,7 @@ O Banco de dados Relacional aplicado para o setor de vendas da WGIFT será model
 - [x] Criação de um banco de dados.
 - [x] Criação de um schema relacional.
 - [x] Criação de tabelas relacionais com chaves primárias (PK) e chaves estrangeiras (FK).
-- [x] Carga dos para as tabelas do banco relacional.
+- [x] Carga dos dados para as tabelas do banco relacional.
 
 ## Criando Data Wherehouse - PostgreSQL:
 
@@ -628,7 +628,7 @@ O Data Warehouse aplicado para o setor de vendas da WGIFT será modelado conform
 
 - [x] Criação de um data warehouse.
 - [x] Criação de tabelas relacionais com chaves primárias (PK) e chaves estrangeiras (FK).
-- [x] Carga dos dados do banco relacional, com os estruturado para o modelo dimensional do data warehouse.
+- [x] Carga dos dados do banco relacional para o modelo dimensional do data warehouse.
 
 ### Funções para auxilio de análise:
 
@@ -965,7 +965,7 @@ Meta Total = IF(
 
 ![tooltip1](/imagens/dashboard/tooltip1.png)
 
-- Tooltip aplicado no gráfico de *Vendas Por Produto*.
+- Tooltip aplicado no gráfico de *Vendas por País*.
 
 ![tooltip2](/imagens/dashboard/tooltip2.png)
 
