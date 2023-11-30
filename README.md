@@ -341,7 +341,7 @@ def cria_tabela_itens_venda(dados_base:'DataFrame') -> 'DataFrame':
 
 > **NOTA**
 >
-> A base de dados originais não contiam os nomes dos clientes e nenhuma outra informação, além do ID,
+> A base de dados originais não continha os nomes dos clientes e nenhuma outra informação, além do ID,
 > por esse motivo foi adicionado, de maneira representativa, nomes e emails para os clientes, isso ajudará na análise
 > e deixa as informações mais organizadas.
 
@@ -354,21 +354,21 @@ def cria_tabela_itens_venda(dados_base:'DataFrame') -> 'DataFrame':
 
 </details>
 <details>
-<summary><b>2. Vendas:</b></summary>
+<summary><b>3. Vendas:</b></summary>
 
 ![Vendas](/imagens/outros/image4.png)
 
 </details>
 
 <details>
-<summary><b>3. Produtos:</b></summary>
+<summary><b>4. Produtos:</b></summary>
 
 ![Produtos](/imagens/outros/image5.png)
 
 </details>
 
 <details>
-<summary><b>4. Itens Venda:</b></summary>
+<summary><b>5. Itens Venda:</b></summary>
 
 ![Itens Venda](/imagens/outros/image6.png)
 
