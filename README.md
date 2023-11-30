@@ -105,34 +105,44 @@ def ler_arquivo_excel(arquivo:'FilePath', nome_tabela:tuple) -> 'DataFrame':
 
 ```
 def transforma_dados(dados_base:'DataFrame') -> 'DataFrame':
-	# Renomear colunas.
-	dados = dados_base.rename(columns={
-    	'StockCode': 'Id_produto',
-    	'Description': 'Produto',
-    	'Quantity': 'Quantidade',
-    	'InvoiceDate': 'Data',
-    	'Price': 'Preço',
-    	'Customer ID': 'Id_cliente',
-    	'Country': 'Localização'
-	})
+    # Renomear colunas.
+    dados = dados_base.rename(columns={
+        'StockCode': 'Id_produto',
+        'Description': 'Produto',
+        'Quantity': 'Quantidade',
+        'InvoiceDate': 'Data',
+        'Price': 'Preço',
+        'Customer ID': 'Id_cliente',
+        'Country': 'Localização'
+    })
     
-	# Cria coluna Total Vendido.
-	dados['Total_vendido'] = dados['Quantidade'] * dados['Preço']
+    # Cria coluna Total Vendido.
+    dados['Total_vendido'] = dados['Quantidade'] * dados['Preço']
     
-	# Remove valores nulos.
-	dados = dados.dropna()
+    # Remove valores nulos.
+    dados = dados.dropna()
     
-	# Alterando os valores negativos das notas canceladas para 0
-	dados.loc[dados['Invoice'].str.contains('C'), ['Quantidade', 'Preço', 'Total_vendido']] = 0
+    # Alterando os valores negativos das notas canceladas para 0
+    dados.loc[dados['Invoice'].str.contains('C'), ['Quantidade', 'Preço', 'Total_vendido']] = 0
     
-	# Alterando localização para o país
-	dados.loc[dados['Localização'].str.contains('European Community'), ['Localização']] = 'Belgium'
+    # Alterando localização para o país
+    dados.loc[dados['Localização'].str.contains('European Community'), ['Localização']] = 'Belgium'
     
-	# Excluindo valores inconsistentes
-	dados.drop(dados[dados['Id_produto'].str.contains('TEST')].index, inplace=True)
-	dados.drop(dados[dados['Localização'].str.contains('Unspecified')].index, inplace=True)
+    # Excluindo valores inconsistentes
+    dados.drop(dados[dados['Id_produto'].str.contains('TEST')].index, inplace=True)
+    dados.drop(dados[dados['Localização'].str.contains('Unspecified')].index, inplace=True)
     
-	return dados
+    # Adicionando Id_localização
+    pais = dados[['Localização']].drop_duplicates().reset_index(drop=True)
+    pais['Id_localização'] = pais.index + 1
+    pais = pais[['Id_localização', 'Localização']]
+    dados = pd.merge(dados, pais, how='left', left_on='Localização', right_on='Localização')
+    
+    # Ordenando as colunas
+    dados = dados[['Invoice','Id_produto','Produto','Quantidade','Data','Preço',
+                   'Id_cliente','Id_localização','Localização', 'Total_vendido']]
+    
+    return dados
 ```
 
 </details>
@@ -156,7 +166,7 @@ Os dados foram carregados a partir de um arquivo xlsx, dividido em duas planilha
 <details>
 <summary><b>2. Transformando e tratando os dados:</b></summary>
 
-Após os tratamentos e transformações na base de dados original, agora temos uma base com 9 colunas e 823.349 linhas.
+Após os tratamentos e transformações na base de dados original, agora temos uma base com 10 colunas e 823.349 linhas.
 
 ![Base Tratada](/imagens/outros/image2.png)
 
@@ -165,7 +175,7 @@ Após os tratamentos e transformações na base de dados original, agora temos u
 <h4>Checklist das ações feitas na base de dados:</h4>
 
 - [x] Redefinição dos nomes das colunas.
-- [x] Adição da coluna Total_vendido.
+- [x] Adição das colunas Id_localização e Total_vendido.
 - [x] Remoção do dado país "Unspecified".
 - [x] Redefinição da localização "European Community" para "Belgium".
 - [x] Remoção dos produtos especificados como "TEST".
@@ -179,84 +189,94 @@ Após os tratamentos e transformações na base de dados original, agora temos u
 <details>
 <summary><b>Função cria_tabela_clientes()</b></summary>
 
->A função **`cria_tabela_clientes()`** retorna um novo objeto ***DataFrame*** **`clientes`**, após realizar seleção das colunas ***Id_cliente e Localização***, os dados recebem um complemento de informações usando a biblioteca ***Faker***, que será usado para gerar nomes e emails, para os clientes e complementar os dados na tabela, por fim, o ***DataFrame*** é estruturado e  suas colunas são ordenadas. O parâmetro **`dados_base=`** recebe o objeto ***DataFrame*** da base de dados já tratada.
+>A função **`cria_tabela_clientes()`** retorna um novo objeto ***DataFrame*** **`clientes`**, após realizar seleção das colunas ***Id_cliente e Id_localização***, os dados recebem um complemento de informações usando a biblioteca ***Faker***, que será usado para gerar nomes e emails, para os clientes e complementar os dados na tabela, por fim, o ***DataFrame*** é estruturado e  suas colunas são ordenadas. O parâmetro **`dados_base=`** recebe o objeto ***DataFrame*** da base de dados já tratada.
 
 ```
-def cria_tabela_clientes(dados_base:'DataFrame') -> 'DataFrame':
-	# Criando cópia da base original.
-	dados_copia = dados_base.copy()
-	clientes_original = dados_copia[['Id_cliente', 'Localização']]
-	clientes = clientes_original.copy()
+def cria_tabela_clientes(dados_base: 'DataFrame') -> 'DataFrame':
+    # Criando cópia da base original.
+    dados_copia = dados_base.copy()
+    tabela_original = dados_copia[['Id_cliente', 'Id_localização']]
+    tabela = tabela_original.copy()
 
-	# Removendo Ids duplicados.
-	clientes.drop_duplicates(
-    	subset=['Id_cliente'],
-    	keep='first',
-    	inplace=True
-	)
+    # Removendo Ids duplicados.
+    tabela.drop_duplicates(
+        subset=['Id_cliente'],
+        keep='first',
+        inplace=True
+    )
     
-	# Convertendo Ids para inteiro.
-	clientes['Id_cliente'] = clientes['Id_cliente'].astype(int)
+    # Convertendo Ids para inteiro.
+    tabela['Id_cliente'] = tabela['Id_cliente'].astype(int)
 
-	# Ordenando coluna ids.
-	clientes = clientes.sort_values(
-    	by='Id_cliente',
-    	ascending=True
-	)
+    # Ordenando coluna ids.
+    tabela = tabela.sort_values(
+        by='Id_cliente',
+        ascending=True
+    )
     
-	# Definindo uma semente para a função Faker.
-	Faker.seed(10)
-	faker = Faker()
+    # Definindo uma semente para a função Faker.
+    Faker.seed(10)
+    faker = Faker()
 
-	# Criando lista de nomes.
-	nomes_clientes = []
-	while len(nomes_clientes) < len(clientes):
-    	nome_cliente = faker.company()
-    	if nome_cliente not in nomes_clientes:
-        	nomes_clientes.append(nome_cliente)
+    # Criando lista de nomes.
+    nomes_clientes = [faker.company() for _ in range(len(tabela))]
+    
+    # Criando emails.
+    emails = [nome.replace(",", "").lower() + "@email.com" for nome in nomes_clientes]
+    emails = [email.replace(" ","_") for email in emails]
+    
+    # Ordenando tabela
+    tabela['Cliente'] = nomes_clientes
+    tabela['Email'] = emails
+    ordem_colunas = ['Id_cliente', 'Id_localização', 'Cliente', 'Email']
+    clientes = tabela[ordem_colunas]
 
-	# Criando emails.
-	emails = []
-	for name in nomes_clientes:
-    	email = name.replace(",", "").lower() + "@email.com"
-    	email = email.replace(" ", "")
-    	emails.append(email)
-
-	clientes['Cliente'] = nomes_clientes
-	clientes['Email'] = emails
-	ordem_colunas = ['Id_cliente', 'Cliente', 'Email', 'Localização']
-	clientes = clientes.reindex(columns=ordem_colunas)    
-
-	return clientes
+    return clientes
 
 ```
+</details>
+<details>
+<summary><b>Função cria_tabela_localizacao()</b></summary>
+
+> A função **`cria_tabela_localizacao()`** retorna um novo objeto ***DataFrame*** **`localizacao`**, realiza a seleção da coluna ***Localização*** da base de dados e cria um ***DataFrame*** com o país de cada cliente.
+
+```
+def cria_tabela_localizacao(dados_base:'DataFrame') -> 'DataFrame':
+    # Criando cópia da base original.
+    dados_copia = dados_base.copy()
+    localizacao = dados_copia[['Id_localização','Localização']]
+    localizacao = localizacao.drop_duplicates(subset=['Localização']).reset_index(drop=True)  
+    
+    return localizacao
+```
+
 </details>
 
 <details>
 <summary><b>Função cria_tabela_vendas()</b></summary>
 
-> A função **`cria_tabela_vendas()`** retorna um novo objeto ***DataFrame*** **`vendas`**, realiza a seleção das colunas ***Invoice, Id_cliente, Data e Total_vendido***, a coluna ***Id_cliente*** é convertida para inteiro e a coluna ***Data*** para o formato datetime, por fim a tabela é agrupada pela coluna ***Total_vendido*** e ordenada pela coluna ***Invoice***. O parâmetro **`dados_base=`** recebe o objeto ***DataFrame*** da base de dados já tradata.
+> A função **`cria_tabela_vendas()`** retorna um novo objeto ***DataFrame*** **`vendas`**, realiza a seleção das colunas ***Invoice, Id_cliente, Id_localização, Data e Total_vendido***, a coluna ***Id_cliente*** é convertida para inteiro e a coluna ***Data*** para o formato datetime, por fim a tabela é agrupada pela coluna ***Total_vendido*** e ordenada pela coluna ***Invoice***. O parâmetro **`dados_base=`** recebe o objeto ***DataFrame*** da base de dados já tradata.
 
 ```
 def cria_tabela_vendas(dados_base:'DataFrame') -> 'DataFrame':
-	# Criando cópia da base original.
-	dados_copia = dados.copy()
-	vendas_original = dados_copia[['Invoice', 'Id_cliente', 'Data', 'Total_vendido']]
-	vendas = vendas_original.copy()
+    # Criando cópia da base original.
+    dados_copia = dados.copy()
+    vendas_original = dados_copia[['Invoice', 'Id_cliente', 'Id_localização', 'Data', 'Total_vendido']]
+    vendas = vendas_original.copy()
     
-	# Transformando coluna Id_cliente em inteiro.
-	vendas['Id_cliente'] = vendas['Id_cliente'].astype(int)
+    # Transformando coluna Id_cliente em inteiro.
+    vendas['Id_cliente'] = vendas['Id_cliente'].astype(int)
 
-	# Convertendo data
-	vendas['Data'] = vendas['Data'].dt.date
-	vendas['Data'] = pd.to_datetime(vendas['Data'])
+    # Convertendo data
+    vendas['Data'] = vendas['Data'].dt.date
+    vendas['Data'] = pd.to_datetime(vendas['Data'])
 
-	# Agrupando vendas pelo total das vendas.
-	vendas = vendas.groupby(['Invoice', 'Id_cliente', 'Data'])['Total_vendido'].sum().reset_index()
+    # Agrupando vendas pelo total das vendas.
+    vendas = vendas.groupby(['Invoice', 'Id_cliente', 'Id_localização', 'Data'])['Total_vendido'].sum().reset_index()
 
-	vendas = vendas.sort_values('Invoice', ascending=True)
+    vendas = vendas.sort_values('Invoice', ascending=True)
 
-	return vendas
+    return vendas
 ```
 </details>
 
@@ -321,13 +341,18 @@ def cria_tabela_itens_venda(dados_base:'DataFrame') -> 'DataFrame':
 
 > **NOTA**
 >
-> A base de dados original não contém os nomes dos clientes e nenhuma outra informação, além de ID e País,
-> por esse motivo adicionamos, de maneira representativa, nomes e emails para os clientes, isso ajudará na análise
+> A base de dados originais não contiam os nomes dos clientes e nenhuma outra informação, além do ID,
+> por esse motivo foi adicionado, de maneira representativa, nomes e emails para os clientes, isso ajudará na análise
 > e deixa as informações mais organizadas.
 
 
 </details>
+<details>
+<summary><b>2. Localização</b></summary>
 
+![Base Localização](/imagens/outros/image.png)
+
+</details>
 <details>
 <summary><b>2. Vendas:</b></summary>
 
@@ -352,6 +377,7 @@ def cria_tabela_itens_venda(dados_base:'DataFrame') -> 'DataFrame':
 <h4>Checklist das tabelas criadas para o modelo relacional:</h4>
 
 - [x] clientes.
+- [x] localização.
 - [x] vendas.
 - [x] produtos.
 - [x] itens venda.
@@ -537,7 +563,12 @@ O Banco de dados Relacional aplicado para o setor de vendas da WGIFT será model
 ![Relacional](/imagens/outros/image7.png)
 
 </details>
+<details>
+<summary><b>Criando Tabela Relacional Localização:</b></summary>
 
+![1001](/imagens/outros/image1001.png)
+
+</details>
 <details>
 <summary><b>Criando Tabela Relacional Clientes:</b></summary>
 
@@ -598,10 +629,14 @@ O Data Warehouse aplicado para o setor de vendas da WGIFT será modelado conform
 <summary><b>Criando Tabela Dimensional Clientes:</b></summary>
 
 ![18](/imagens/outros/image18.png)
-![19](/imagens/outros/image19.png)
 
 </details>
+<details>
+<summary><b>Criando Tabela Dimensional Localização</b></summary>
 
+![1005](/imagens/outros/image1005.png)
+
+</details>
 <details>
 <summary><b>Criando Tabela Dimensional Produtos:</b></summary>
 

@@ -39,10 +39,11 @@ FROM dimensional.fvendas;
 
 -- Total de clientes por país
 SELECT 
-    localizacao,
-    count(cliente) as total
-FROM dimensional.dclientes
-GROUP BY localizacao
+    l.localizacao,
+    count(distinct id_cliente) as total
+FROM dimensional.fvendas v
+INNER JOIN dimensional.dlocalizacao l ON l.id_localizacao = v.id_localizacao
+GROUP BY l.localizacao
 ORDER BY total DESC;
 
 -- Os 10 maiores clientes
