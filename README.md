@@ -1,5 +1,7 @@
 # Pipeline de Dados com Python, PostgreSQL e Power BI 
 
+### Veja a análise completa desse projeto em [Pipeline de Dados com Python, PostgreSQL e Power BI](https://sites.google.com/view/portflio-wiliams-alves/in%C3%ADcio/pipeline-de-dados?authuser=0).
+
 ## Objetivo: 
 O projeto tem o objetivo de demonstrar os passos de um pipeline de dados implementado em dados reais de um varejo on-line do Reino Unido, para tarefa aplicamos todo o processo de **ETL (Extract, Transform, Load)** com linguagem **Python e SQL**, com carga de dados para um banco relacional e modelagem dos dados para um data warehouse usando **PostgreSQL**, e finalizando com dashboard de monitoramento do setor de vendas da empresa com **Power BI**.
 
